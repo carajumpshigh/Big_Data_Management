@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import sys
 import csv
 from pyspark import SparkContext
@@ -14,9 +11,6 @@ import fiona.crs
 import shapely
 import pyproj
 import shapely.geometry as geom
-
-
-# In[4]:
 
 
 def createIndex(shapefile):
@@ -82,9 +76,6 @@ def processTrips(pid, records):
     return counts.items()
 
 
-# In[ ]:
-
-
 if __name__ == "__main__":
     
     sc = SparkContext()
@@ -96,6 +87,14 @@ if __name__ == "__main__":
     boroughs = gpd.read_file(boroughs_file)
     
     taxi = sc.textFile(sys.argv[1])
-    counts = taxi.filter(lambda row: len(row)>=5)              .mapPartitionsWithIndex(processTrips)              .reduceByKey(lambda x,y: x+y)              .map(lambda x: (boroughs.boro_name[x[0][0]],(neighborhoods.neighborhood[x[0][1]],x[1])))              .groupByKey()              .mapValues(list)              .mapValues(lambda x: sorted(x, key=lambda x:x[1], reverse=True)[:3])              .map(lambda x: (x[0], (x[1][0][0], x[1][0][1], x[1][1][0], x[1][1][1], x[1][2][0], x[1][2][1])))              .sortByKey()
-             .saveAsTextFile(sys.argv[2])
+    counts = taxi.filter(lambda row: len(row)>=5) \
+                 .mapPartitionsWithIndex(processTrips) \
+                 .reduceByKey(lambda x,y: x+y) \
+                 .map(lambda x: (boroughs.boro_name[x[0][0]],(neighborhoods.neighborhood[x[0][1]],x[1]))) \
+                 .groupByKey() \
+                 .mapValues(list) \
+                 .mapValues(lambda x: sorted(x, key=lambda x:x[1], reverse=True)[:3]) \
+                 .map(lambda x: (x[0], (x[1][0][0], x[1][0][1], x[1][1][0], x[1][1][1], x[1][2][0], x[1][2][1]))) \
+                 .sortByKey() \
+                 .saveAsTextFile(sys.argv[2])
 
